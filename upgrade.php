@@ -96,7 +96,7 @@ class c_ChangeMigrationScript
 	
 	public function lockApache()
 	{
-		$content = file_get_contents(dirname(__FILE__) . '/migration.apache.conf');
+		$content = file_get_contents(dirname(__FILE__) . '/upgrade.apache.conf');
 		$buildHtAccess = WEBEDIT_HOME . '/build/'. $this->getProfile().'/www.htaccess';
 		if (file_exists($buildHtAccess))
 		{
@@ -627,7 +627,7 @@ class c_ChangeMigrationScript
 	protected function getReleaseModules($releaseVersion)
 	{
 		$result = array();
-		$filename = WEBEDIT_HOME . '/migration/release-' . $releaseVersion . '.xml';
+		$filename = WEBEDIT_HOME . '/upgrade/release-' . $releaseVersion . '.xml';
 		$doc = new DOMDocument('1.0', 'UTF-8');
 		$doc->load($filename);
 		$xpath = new DOMXPath($doc);
@@ -651,7 +651,7 @@ class c_ChangeMigrationScript
 	protected function getReleaseDependencies($releaseVersion)
 	{
 		$result = array();
-		$filename = WEBEDIT_HOME . '/migration/release-' . $releaseVersion . '.xml';
+		$filename = WEBEDIT_HOME . '/upgrade/release-' . $releaseVersion . '.xml';
 		$doc = new DOMDocument('1.0', 'UTF-8');
 		$doc->load($filename);
 		$xpath = new DOMXPath($doc);
@@ -771,7 +771,7 @@ class c_ChangeMigrationScript
 	protected function checkRelease()
 	{
 		$toName = 'release-' . self::$toRelease . '.xml';
-		$destFile = WEBEDIT_HOME . '/migration/' . $toName;
+		$destFile = WEBEDIT_HOME . '/upgrade/' . $toName;
 		$url = self::REMOTE_REPOSITORY . '/' . $toName;
 		$result = $this->getRemoteFile($url, $destFile);
 		if ($result !== true)
@@ -801,7 +801,7 @@ class c_ChangeMigrationScript
 			}
 		}
 		
-		$destFile = WEBEDIT_HOME . '/migration/license.xml';
+		$destFile = WEBEDIT_HOME . '/upgrade/license.xml';
 		$url = self::REMOTE_REPOSITORY . '/license.xml';
 		$result = $this->getRemoteFile($url, $destFile, array('modules' => $modules));
 		if ($result === true)
