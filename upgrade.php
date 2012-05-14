@@ -44,6 +44,8 @@ class c_ChangeMigrationScript
 		
 		"website 0365", 	// Add tales attibutes: alternateclass, url, tagurl, actionurl, currenturl
 		
+		"website 0366", // Add visual property on topics. Add menutags list. Update menufolder label.
+		
 		"website 0367", 	// Add website_CleanCSSAndJSCacheTask task
 		
 		"workflow 0360", 	// Convert onHourChange Listener at planned task
