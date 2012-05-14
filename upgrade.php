@@ -55,7 +55,6 @@ class c_ChangeMigrationScript
 		"forums 0360", 		// Add fields to manage the flag on thread
 				
 		"order 0367", 		// Change the hourChange listener methods by planned system task.
-
 		
 		"catalog 0365", 	// Migrate productqueryfolder documents from featurepacka. Migrate featurepackb.
 		
@@ -67,7 +66,9 @@ class c_ChangeMigrationScript
 
 		"order 0366", 		// Add orderpreparation document. Transform expedition/useorderlines property to expeditionline document
 
-		"productreturns 0360", 	// Add specificLine property on npaireturn document.		
+		"productreturns 0360", 	// Add specificLine property on npaireturn document.
+
+		"productexporter 0360", 	// Add lengow exporter
 		
 		"catalog 0368", 	// Add billingarea document.......
 		
