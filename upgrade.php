@@ -3,9 +3,11 @@ class c_ChangeMigrationScript
 {
 	const REMOTE_REPOSITORY = 'http://update.rbschange.fr';
 	
-	static $fromRelease = '3.5.5';
+	static $fromRelease = '3.5.6';
 	
-	static $toRelease = '3.6.0';
+	static $toRelease = '3.6.1';
+	
+	static $removedModules = array();
 	
 	static $patchs = array(
 		"lockApache",
@@ -124,6 +126,7 @@ class c_ChangeMigrationScript
 			foreach ($paths as $path)
 			{
 				$moduleName = basename(dirname($path));
+				if (in_array($moduleName, self::$removedModules)) {continue;}
 				if ($doc->load($path))
 				{
 					$nl = $doc->getElementsByTagName('version');
@@ -208,13 +211,20 @@ class c_ChangeMigrationScript
 						$this->log($type. '/'. $name. ' '. $info['version']. ' Is Ok '. PHP_EOL);
 					}
 				}
+				elseif ($name == 'featurepacka' || $name == 'featurepackb' || $name == 'mailbox')
+				{
+					self::$removedModules[] = $name;
+					$this->log($type. '/'. $name. ' '. $info['version']. ' Ignored'. PHP_EOL);
+				}
 				else
 				{
-					$this->log($type. '/'. $name. ' '. $info['version']. ' not found in '. self::$toRelease. ' Release'. PHP_EOL, 'error');
-					return false;
+					if ($type == 'modules') {self::$removedModules[] = $name;}
+					$this->log($type. '/'. $name. ' '. $info['version']. ' not found in '. self::$toRelease. ' Release'. PHP_EOL, 'warn');
 				}
 			}
 		}
+		
+		$this->log('Not Upgraded modules: '. implode(', ', self::$removedModules). PHP_EOL);
 		return true;
 	}
 		
@@ -231,6 +241,7 @@ class c_ChangeMigrationScript
 		$this->log('framework ' .$node->textContent . ' -> ' . $t . PHP_EOL);		
 		while ($node->hasChildNodes()){$node->removeChild($node->lastChild);}
 		$node->appendChild($this->changeXML->createTextNode($t));
+		$toDelete = array();
 		
 		foreach ($this->changeXML->getElementsByTagName('module') as $node)
 		{
@@ -244,8 +255,26 @@ class c_ChangeMigrationScript
 				while ($node->hasChildNodes()) {$node->removeChild($node->lastChild);}
 				$node->appendChild($this->changeXML->createTextNode($modulename . '-' . $t));
 			}
+			elseif ($modulename == 'featurepacka' || $modulename == 'featurepackb' || $modulename == 'mailbox')
+			{
+				$toDelete[$modulename] = $node;
+			}
 		}
-			
+		
+		foreach ($toDelete as $modulename => $node)
+		{
+			/* @var $node DOMElement */
+			$this->log($modulename . ' Removed' . PHP_EOL);
+			@unlink(WEBEDIT_HOME . '/modules/' . $modulename);
+			$node->parentNode->removeChild($node);
+		}
+		
+		$mailBox = WEBEDIT_HOME . '/modules/mailbox';
+		if (file_exists($mailBox))
+		{
+			$this->log('mailbox Removed' . PHP_EOL);
+			@unlink($mailBox);
+		}
 		$this->changeXML->save(WEBEDIT_HOME . '/change.xml');
 	}
 	
@@ -266,6 +295,8 @@ class c_ChangeMigrationScript
 	{	
 		@unlink(WEBEDIT_HOME . "/.computedChangeComponents.ser");
 		$this->rmdir(WEBEDIT_HOME . "/cache/" . $this->getProfile());	
+		$this->rmdir(WEBEDIT_HOME . "/cache/aop");
+		$this->rmdir(WEBEDIT_HOME . "/cache/aop-backup");
 		$this->rmdir(WEBEDIT_HOME . "/cache/autoload");
 		$this->rmdir(WEBEDIT_HOME . "/cache/www");
 		clearstatcache();
@@ -296,6 +327,8 @@ class c_ChangeMigrationScript
 		$this->executeTask("compile-config");
 		
 		$this->executeTask("compile-documents");
+		
+		$this->executeTask("compile-listeners");
 		
 		$this->executeTask("generate-database");
 		
@@ -875,9 +908,7 @@ class c_ChangeMigrationScript
 		}
 	}
 	
-	
-	
-	
+
 	/**
      * Part of Bootstrap
 	 */
@@ -1015,26 +1046,19 @@ class c_ChangeMigrationScript
 	 */
 	protected function unzip($zipFilePath, $targetDir)
 	{
-		if (class_exists('ZipArchive', false))
+		$zipArch = new ZipArchive();
+		$res = $zipArch->open($zipFilePath);
+		if ($res === TRUE) 
 		{
-			$zipArch = new ZipArchive();
-			$res = $zipArch->open($zipFilePath);
-			if ($res === TRUE) 
-			{
-				$this->log('Use ZipArchive for unzip: '. $zipFilePath . PHP_EOL);
-				$zipArch->extractTo($targetDir);
-				$zipArch->close();
-				return;
-			}
-			else
-			{
-				$this->log('Error on use ZipArchive : ' . $res. PHP_EOL, 'error');
-			}
+			$this->log('Use ZipArchive for unzip: '. $zipFilePath . PHP_EOL);
+			$zipArch->extractTo($targetDir);
+			$zipArch->close();
+			return;
 		}
-		
-		$this->log('Use Soft php unzip'. PHP_EOL, 'warn');
-		require_once dirname(__FILE__) .'/Zip.php';
-		migration_Zip::unzip($zipFilePath, $targetDir);
+		else
+		{
+			$this->log('Error on use ZipArchive : ' . $res. PHP_EOL, 'error');
+		}
 	}
 	
 	/**
